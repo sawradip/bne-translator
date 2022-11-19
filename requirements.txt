@@ -1,0 +1,4 @@
+wget
+gdown
+sentencepiece
+OpenNMT-py==2.3.0 

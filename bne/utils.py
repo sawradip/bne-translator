@@ -16,7 +16,7 @@ class FileLinks:
                     'base_bn2en.pt')
 
     base_en2bn = (  'gdrive',
-                    '1-RLTuuOvSPB1Qzmho9WFlhAYnbYxPI_Q'
+                    '1-RLTuuOvSPB1Qzmho9WFlhAYnbYxPI_Q',
                     'base_en2bn.pt')
 
 def download_file(link_type, link, file_destination):
@@ -36,7 +36,7 @@ def spm_export_vocab(model_file, vocab_file = None):
     sp = spm.SentencePieceProcessor()
     sp.Load(model_file)
     vocabs = [sp.IdToPiece(id) for id in range(sp.GetPieceSize())]
-    with open(vocab_file, "w") as vfile:
+    with open(vocab_file, "w", encoding="utf-8") as vfile:
         for v in vocabs:
             id = sp.PieceToId(v)
             vocab_dict[v] = sp.GetScore(id)
@@ -48,7 +48,7 @@ def spm_encode(model_path, input_txt, input_tok):
     sp = spm.SentencePieceProcessor()
     sp.Load(model_path)
 
-    with open(input_txt, "r") as tfile:
+    with open(input_txt, "r", encoding="utf-8") as tfile:
         lines = tfile.readlines()
 
     tok_lines = []
@@ -58,14 +58,14 @@ def spm_encode(model_path, input_txt, input_tok):
         tok_lines.append(tok_line)
 
     tok_lines = "\n".join(tok_lines)
-    with open(input_tok, "w") as tfile:
+    with open(input_tok, "w", encoding="utf-8") as tfile:
         tfile.write(tok_lines)
 
 def spm_decode(model_path, output_tok, output_txt):
     sp = spm.SentencePieceProcessor()
     sp.Load(model_path)
 
-    with open(output_tok, "r") as tfile:
+    with open(output_tok, "r", encoding="utf-8") as tfile:
         tok_lines = tfile.readlines()
 
     lines = []

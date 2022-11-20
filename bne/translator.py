@@ -1,7 +1,30 @@
 import os
+import torch
 import shutil
 
-from utils import FileLinks, download_file, spm_export_vocab, spm_encode, spm_decode
+from .utils import FileLinks, download_file, spm_export_vocab, spm_encode, spm_decode
+
+DEFAULT_WEIGHT_PATH = 'weights'
+B2E_MODEL = os.path.join(DEFAULT_WEIGHT_PATH, FileLinks.base_bn2en[2])
+E2B_MODEL = os.path.join(DEFAULT_WEIGHT_PATH, FileLinks.base_en2bn[2])
+BN_MODEL = os.path.join(DEFAULT_WEIGHT_PATH, FileLinks.bn_model[2])
+EN_MODEL = os.path.join(DEFAULT_WEIGHT_PATH, FileLinks.en_model[2])
+
+def weightsDL( b2e ):
+    if not os.path.exists(DEFAULT_WEIGHT_PATH):
+        os.mkdir(DEFAULT_WEIGHT_PATH)
+    if b2e == True:
+        if not os.path.isfile(B2E_MODEL):
+            download_file(FileLinks.base_bn2en[0], FileLinks.base_bn2en[1], B2E_MODEL)
+    else:
+        if not os.path.isfile(E2B_MODEL):
+            download_file(FileLinks.base_en2bn[0], FileLinks.base_en2bn[1], E2B_MODEL)
+
+    if not os.path.isfile(BN_MODEL):
+        download_file(FileLinks.bn_model[0], FileLinks.bn_model[1], BN_MODEL) 
+
+    if not os.path.isfile(EN_MODEL):
+        download_file(FileLinks.en_model[0], FileLinks.en_model[1], EN_MODEL) 
 
 
 def spmModel2Vocab(model_path):
@@ -44,7 +67,7 @@ def spmOperate(CFG, temp_dir, tokenize):
         output_file = os.path.join(CFG.output_dir, CFG.output_filename)
 
         modelName = os.path.join(temp_dir, f"tgtSPM.model")
-        spm_decode(model_path=modelName, output_tok=tgtTok_path, output_file = output_file)
+        spm_decode(model_path=modelName, output_tok=tgtTok_path, output_txt = output_file)
         # spm_cmd = [
         #     f"spm_decode --model=\"{modelName}\"",
         #     f"< \"{tgtTok_path}\" > \"{output_file}\""
@@ -75,11 +98,13 @@ def translate(CFG, srcTok_path):
 
 
 
-def bne_translate(src_sentence = None, src_textfile = None):
+def bne_translate( b2e, src_sentence = None, src_textfile = None):
+    
+    weightsDL( b2e )
     class CFG:
-        src2tgt_model = './base_bn2en.pt'
-        src_lang_model = './bn.model'
-        tgt_lang_model = './en.model'
+        src2tgt_model = B2E_MODEL if b2e else E2B_MODEL
+        src_lang_model = BN_MODEL if b2e else EN_MODEL
+        tgt_lang_model = EN_MODEL if b2e else BN_MODEL
         output_dir = '.'
 
     if (src_sentence and src_textfile) or not (src_sentence or src_textfile):
@@ -93,7 +118,7 @@ def bne_translate(src_sentence = None, src_textfile = None):
 
     if src_sentence:
         src_textfile = os.path.join(temp_dir, 'src_textfile.txt')
-        with open( src_textfile, 'w') as writer:
+        with open( src_textfile, 'w', encoding="utf-8") as writer:
             writer.write(src_sentence)
     print(src_textfile)
     CFG.input_txt = src_textfile
@@ -114,9 +139,15 @@ def bne_translate(src_sentence = None, src_textfile = None):
 
     tgtTok_tempPath = translate(CFG, srcTok_tempPath)
 
-    en_textfile = spmOperate(CFG, temp_dir, tokenize = False)
+    tgt_textfile = spmOperate(CFG, temp_dir, tokenize = False)
 
-    with open(en_textfile) as reader:
-        en_sentence = reader.read()
+    with open(tgt_textfile, encoding="utf-8") as reader:
+        tgt_sentence = reader.read()
     
-    return en_sentence
+    return tgt_sentence
+
+
+if __name__ == "__main__":
+    b2e = True
+    s = bne_translate(b2e, src_sentence = 'সেরা আন্তর্জাতিক সিনেমা বিভাগে ছবিটি মনোনীত হয়েছে।')
+    print(s)

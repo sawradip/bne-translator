@@ -1,0 +1,1 @@
+from .translator import bne_translate
